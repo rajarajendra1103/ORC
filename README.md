@@ -39,7 +39,7 @@ An intelligent document understanding and interactive query system powered by mu
 
 ### 1. Install Dependencies
 ```bash
-pip install torch transformers sentence-transformers easyocr pillow python-docx openpyxl pypdf pymupdf pandas pyarrow fastapi uvicorn scikit-learn
+pip install torch transformers sentence-transformers easyocr pillow python-docx openpyxl pypdf pymupdf pandas pyarrow fastapi uvicorn scikit-learn jiwer datasets
 ```
 
 ### 2. Run Dataset Cleaning Pipeline
@@ -47,7 +47,18 @@ pip install torch transformers sentence-transformers easyocr pillow python-docx 
 python src/clean_dataset.py
 ```
 
-### 3. Launch Web Application Server
+### 3. Create Image-Level Train/Test Split (80/20)
+```bash
+python src/split_dataset.py
+```
+
+### 4. Fine-Tune TrOCR Model & Evaluate CER
+```bash
+python src/train_trocr.py
+```
+*(The trained weights will be saved to `models/trocr_finetuned/` and automatically loaded by `TrOCRExtractor`)*
+
+### 5. Launch Web Application Server
 ```bash
 python server.py
 ```
@@ -70,9 +81,11 @@ Open **http://127.0.0.1:8000** in your browser!
 │   └── app.js                     # Modular JavaScript client logic
 ├── src/
 │   ├── clean_dataset.py           # Dataset cleaning & spatial text pipeline
+│   ├── split_dataset.py           # Image-level 80/20 train/test dataset splitter
+│   ├── train_trocr.py             # TrOCR fine-tuning, CER evaluation & checkpoint saver
 │   ├── document_processor.py      # Unified multi-format document reader
 │   ├── models/
-│   │   ├── trocr_extractor.py     # TrOCR & Hybrid OCR text extractor
+│   │   ├── trocr_extractor.py     # TrOCR & Hybrid OCR text extractor (auto-loads fine-tuned weights)
 │   │   ├── layoutlm_analyzer.py   # LayoutLMv3 spatial layout analyzer
 │   │   └── donut_parser.py        # Donut Transformer structured IE model
 │   └── agent/
@@ -80,6 +93,7 @@ Open **http://127.0.0.1:8000** in your browser!
 │       ├── summarizer.py          # Executive & topic summarizer agent
 │       ├── mcq_generator.py       # MCQ Quiz generator agent
 │       └── keyword_highlighter.py # Visual bounding box highlighter
-├── dataset/                       # Raw & Cleaned Parquets/CSVs
+├── dataset/                       # Raw & Cleaned Parquets/CSVs (train/test splits)
+├── models/                        # Trained model checkpoints (e.g., trocr_finetuned/)
 └── README.md                      # Project Documentation
 ```

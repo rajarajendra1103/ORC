@@ -16,6 +16,13 @@ dataset/cleaned_annot.csv
 dataset/train_val_images/
 dataset/*.json
 dataset/*.zip
+dataset/*.parquet
+dataset/*.csv
+dataset/*.jsonl
+
+# Model Artifacts
+models/trocr_finetuned/
+models/*/
 
 # IDE & Logs
 .vscode/
@@ -23,3 +30,4 @@ dataset/*.zip
 *.log
 .system_generated/
 scratch/
+

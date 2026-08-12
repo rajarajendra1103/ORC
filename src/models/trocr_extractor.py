@@ -1,3 +1,5 @@
+import os
+from pathlib import Path
 import torch
 from PIL import Image
 import numpy as np
@@ -8,11 +10,63 @@ class TrOCRExtractor:
     TrOCR & Hybrid OCR Text Extraction Engine
     Extracts text and bounding boxes from document images and image-based PDFs.
     """
+    FINETUNED_DIR = Path("models") / "trocr_finetuned"
+    BASE_MODEL    = "microsoft/trocr-base-printed"
+
     def __init__(self, use_gpu=False):
         self.device = "cuda" if torch.cuda.is_available() and use_gpu else "cpu"
         self._reader = None
         self._trocr_processor = None
         self._trocr_model = None
+        # Auto-load fine-tuned model if checkpoint exists
+        self.load_finetuned()
+
+    def load_finetuned(self, model_dir: str | None = None) -> bool:
+        """
+        Load the fine-tuned TrOCR checkpoint.
+        Falls back to the HuggingFace base model if the checkpoint is not found.
+        Returns True if a checkpoint was loaded, False if falling back to base.
+        Uses component-level loading for transformers 5.x compatibility.
+        """
+        from transformers import ViTImageProcessor, RobertaTokenizer, VisionEncoderDecoderModel
+
+        checkpoint = Path(model_dir) if model_dir else self.FINETUNED_DIR
+        source = str(checkpoint) if checkpoint.exists() else self.BASE_MODEL
+        loaded_finetuned = checkpoint.exists()
+
+        try:
+            self._trocr_processor = ViTImageProcessor.from_pretrained(source)
+            self._trocr_tokenizer = RobertaTokenizer.from_pretrained(source, use_fast=False)
+            self._trocr_model = VisionEncoderDecoderModel.from_pretrained(source)
+            self._trocr_model.to(self.device)
+            self._trocr_model.eval()
+            status = "fine-tuned" if loaded_finetuned else "base (not fine-tuned yet)"
+            print(f"[TrOCRExtractor] Loaded {status} model from: {source}")
+        except Exception as e:
+            print(f"[TrOCRExtractor] Warning: Could not load TrOCR model ({e}). ")
+            self._trocr_processor = None
+            self._trocr_tokenizer = None
+            self._trocr_model = None
+            loaded_finetuned = False
+
+        return loaded_finetuned
+
+    def _transcribe_crop(self, crop_image: Image.Image) -> str:
+        """
+        Use the loaded TrOCR model to transcribe a single word-crop image.
+        Returns empty string if TrOCR is not available.
+        """
+        if self._trocr_processor is None or self._trocr_model is None:
+            return ""
+        pixel_values = self._trocr_processor(
+            images=crop_image.convert("RGB"), return_tensors="pt"
+        ).pixel_values.to(self.device)
+        with torch.no_grad():
+            generated = self._trocr_model.generate(pixel_values, max_new_tokens=32)
+        text = self._trocr_tokenizer.batch_decode(
+            generated, skip_special_tokens=True
+        )[0].strip()
+        return text
 
     def _get_easyocr_reader(self):
         if self._reader is None:
