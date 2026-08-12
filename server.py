@@ -200,6 +200,14 @@ static_path = Path("static")
 static_path.mkdir(exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+@app.get("/api/health")
+async def health_check():
+    return {"status": "healthy", "service": "OCR Document Intelligence API"}
+
+@app.head("/", response_class=HTMLResponse)
+async def serve_head():
+    return HTMLResponse(content="")
+
 @app.get("/", response_class=HTMLResponse)
 async def serve_home():
     index_path = static_path / "index.html"
