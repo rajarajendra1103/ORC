@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Agent - OCR Document Intelligence System</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+        <div class="brand-header">
+            <span class="brand-icon">⚡</span>
+            <div class="brand-title">Doc AI Agent</div>
+        </div>
+
+        <nav class="nav-menu">
+            <div class="nav-item active" data-tab="tab-upload">
+                <span class="nav-icon">📤</span>
+                <span>Document Upload & Models</span>
+            </div>
+            <div class="nav-item" data-tab="tab-chat">
+                <span class="nav-icon">💬</span>
+                <span>AI Document Chat</span>
+            </div>
+            <div class="nav-item" data-tab="tab-summarizer">
+                <span class="nav-icon">📝</span>
+                <span>Auto Summarizer</span>
+            </div>
+            <div class="nav-item" data-tab="tab-mcq">
+                <span class="nav-icon">🎯</span>
+                <span>MCQ Quiz Generator</span>
+            </div>
+            <div class="nav-item" data-tab="tab-highlight">
+                <span class="nav-icon">🔍</span>
+                <span>Keyword Highlighter</span>
+            </div>
+            <div class="nav-item" data-tab="tab-dataset">
+                <span class="nav-icon">📊</span>
+                <span>Cleaned Dataset Explorer</span>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Banner -->
+        <div class="top-banner">
+            <h1>📄 AI Agent for OCR-Based Document Understanding</h1>
+            <p>Multi-Format Ingestion • Multi-Model AI Engine (TrOCR, LayoutLMv3, Donut) • Document Q&A • Summaries • MCQ Generator • Visual Bounding Box Highlighting</p>
+        </div>
+
+        <!-- TAB 1: UPLOAD & MODELS -->
+        <div id="tab-upload" class="tab-panel active">
+            <h2>📤 Multi-Format Document Ingestion</h2>
+            <p class="subtitle">Upload Images (PNG, JPG), PDFs, Word DOCX, or Excel XLSX files to process with specialized Document AI models.</p>
+
+            <div class="card">
+                <div class="dropzone" id="file-dropzone">
+                    <input type="file" id="file-input" multiple accept=".png,.jpg,.jpeg,.bmp,.tiff,.pdf,.docx,.xlsx" style="display:none;">
+                    <div class="dropzone-icon">📁</div>
+                    <h3>Drag & Drop Document Files Here</h3>
+                    <p>Supported: PNG, JPG, PDF, DOCX, XLSX</p>
+                    <button class="btn btn-primary" style="margin-top: 16px;" onclick="document.getElementById('file-input').click()">Browse Files</button>
+                </div>
+            </div>
+
+            <div id="processing-spinner" style="display:none;" class="card">
+                <p style="color: var(--text-accent); font-weight: 600;">⏳ Processing documents with TrOCR, LayoutLMv3, and Donut Transformer...</p>
+            </div>
+
+            <!-- Upload Results & Model Breakdown -->
+            <div id="document-results-section" style="display:none;">
+                <h2>🤖 Document AI Model Pipeline Outputs</h2>
+                <div class="card">
+                    <div class="form-group">
+                        <label class="form-label">Select Active Document for Inspection:</label>
+                        <select id="doc-selector" class="form-control" onchange="renderActiveDocView()"></select>
+                    </div>
+
+                    <div class="grid-2">
+                        <!-- Rendered Image View -->
+                        <div>
+                            <h3 style="color: var(--text-primary); margin-bottom: 12px;">Document Render View</h3>
+                            <div class="image-preview-container">
+                                <img id="rendered-doc-img" src="" alt="Rendered Document Page">
+                            </div>
+                        </div>
+
+                        <!-- Multi-Model AI Breakdown -->
+                        <div>
+                            <h3 style="color: var(--text-primary); margin-bottom: 12px;">Specialized AI Models Responsibilities</h3>
+
+                            <div class="card" style="padding: 16px; margin-bottom: 16px;">
+                                <span class="model-badge badge-trocr">TrOCR — Text Extraction</span>
+                                <p style="color: var(--text-secondary); font-size: 0.9rem;">Optical character recognition & text line extraction.</p>
+                                <pre id="trocr-text-output" style="max-height: 140px; margin-top: 10px;"></pre>
+                            </div>
+
+                            <div class="card" style="padding: 16px; margin-bottom: 16px;">
+                                <span class="model-badge badge-layoutlm">LayoutLMv3 — Layout Understanding</span>
+                                <p style="color: var(--text-secondary); font-size: 0.9rem;">Spatial layout analysis, titles, headers, paragraphs, and tables.</p>
+                                <div id="layoutlm-output" style="margin-top: 10px; padding: 12px; background: var(--bg-input); border-radius: 8px; border: 1px solid var(--border-color);"></div>
+                            </div>
+
+                            <div class="card" style="padding: 16px;">
+                                <span class="model-badge badge-donut">Donut — Structured Understanding</span>
+                                <p style="color: var(--text-secondary); font-size: 0.9rem;">Converts document layout into structured key-value records.</p>
+                                <div id="donut-output" style="margin-top: 10px; padding: 12px; background: var(--bg-input); border-radius: 8px; border: 1px solid var(--border-color);"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: AI DOCUMENT CHAT -->
+        <div id="tab-chat" class="tab-panel">
+            <h2>💬 AI Document Chat & Q&A</h2>
+            <p class="subtitle">Ask questions about your uploaded documents. Answers are generated strictly based on document content.</p>
+
+            <div class="card">
+                <div class="chat-container">
+                    <div class="chat-messages" id="chat-box">
+                        <div class="chat-bubble agent">
+                            👋 Hello! I am your AI Document Agent. Ask me anything about your uploaded documents!
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 12px;">
+                        <input type="text" id="chat-input" class="form-control" placeholder="e.g. What is the definition of supervised learning?">
+                        <button class="btn btn-primary" onclick="sendChatMessage()">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: AUTOMATIC SUMMARIZER -->
+        <div id="tab-summarizer" class="tab-panel">
+            <h2>📝 Automatic Document Summarizer</h2>
+            <p class="subtitle">Generate executive summaries, key bullet points, and chapter/topic breakdowns.</p>
+
+            <div class="card">
+                <button class="btn btn-primary" onclick="fetchSummary()">Generate Summary</button>
+
+                <div id="summary-results" style="margin-top: 24px; display:none;">
+                    <h3 style="color: var(--text-accent); margin-bottom: 8px;">📌 Executive Summary</h3>
+                    <div class="card" style="background: var(--bg-input);">
+                        <p id="executive-summary-text" style="color: var(--text-primary); font-size: 1rem;"></p>
+                    </div>
+
+                    <h3 style="color: var(--text-accent); margin-bottom: 8px;">🎯 Key Bullet Points</h3>
+                    <ul id="key-points-list" style="padding-left: 20px; color: var(--text-primary); margin-bottom: 24px;"></ul>
+
+                    <h3 style="color: var(--text-accent); margin-bottom: 8px;">📚 Topic / Section Summaries</h3>
+                    <div id="topic-summaries-container"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: MCQ QUIZ GENERATOR -->
+        <div id="tab-mcq" class="tab-panel">
+            <h2>🎯 MCQ Quiz Generator</h2>
+            <p class="subtitle">Generate Multiple Choice Questions with Easy, Medium, and Hard difficulty levels, correct answers, and explanations.</p>
+
+            <div class="card">
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Number of Questions:</label>
+                        <select id="mcq-num" class="form-control">
+                            <option value="3">3 Questions</option>
+                            <option value="5" selected>5 Questions</option>
+                            <option value="10">10 Questions</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Difficulty Level:</label>
+                        <select id="mcq-diff" class="form-control">
+                            <option value="Easy">Easy</option>
+                            <option value="Medium" selected>Medium</option>
+                            <option value="Hard">Hard</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="generateMCQs()">Generate MCQs</button>
+
+                <div id="mcq-container" style="margin-top: 24px;"></div>
+            </div>
+        </div>
+
+        <!-- TAB 5: KEYWORD HIGHLIGHTER -->
+        <div id="tab-highlight" class="tab-panel">
+            <h2>🔍 Visual Keyword & Bounding Box Highlighter</h2>
+            <p class="subtitle">Highlight important concepts directly on the document page image.</p>
+
+            <div class="card">
+                <div class="form-group">
+                    <label class="form-label">Keywords to Highlight (comma separated):</label>
+                    <input type="text" id="keywords-input" class="form-control" placeholder="e.g. learning, model, summary">
+                </div>
+                <button class="btn btn-primary" onclick="fetchHighlighting()">Highlight Keywords</button>
+
+                <div style="margin-top: 24px; text-align: center;">
+                    <div class="image-preview-container">
+                        <img id="highlighted-img-view" src="" alt="Highlighted Bounding Box View">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 6: DATASET EXPLORER -->
+        <div id="tab-dataset" class="tab-panel">
+            <h2>📊 TextOCR Cleaned Dataset Explorer</h2>
+            <p class="subtitle">Query 21,749 clean documents and 714,768 OCR annotations created in dataset/.</p>
+
+            <div class="grid-3" style="margin-bottom: 24px;">
+                <div class="card" style="text-align: center;">
+                    <h3 style="font-size: 2rem; color: var(--text-accent);">21,749</h3>
+                    <p style="color: var(--text-secondary);">Clean Documents</p>
+                </div>
+                <div class="card" style="text-align: center;">
+                    <h3 style="font-size: 2rem; color: var(--success);">714,768</h3>
+                    <p style="color: var(--text-secondary);">Clean Annotations</p>
+                </div>
+                <div class="card" style="text-align: center;">
+                    <h3 style="font-size: 2rem; color: var(--warning);">337,584</h3>
+                    <p style="color: var(--text-secondary);">Filtered '.' Tokens (32.08%)</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div style="display: flex; gap: 12px;">
+                    <input type="text" id="dataset-search-input" class="form-control" placeholder="Search corpus by keyword (e.g. Performance)...">
+                    <button class="btn btn-primary" onclick="searchDataset()">Search</button>
+                </div>
+
+                <div id="dataset-results-container" style="margin-top: 20px;"></div>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
